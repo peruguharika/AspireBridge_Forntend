@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+    <style>
+        img { width: 200px; height: 150px; object-fit: cover; margin: 10px; border: 1px solid #ccc; }
+        .container { display: flex; flex-wrap: wrap; }
+        .image-item { text-align: center; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Test</h1>
+    <div class="container">
+        <div class="image-item">
+            <h3>One-on-One</h3>
+            <img src="/images/one-on-one.jpg" alt="One-on-one" onerror="this.style.border='3px solid red'; this.alt='FAILED: one-on-one.jpg';">
+        </div>
+        <div class="image-item">
+            <h3>Students Studying</h3>
+            <img src="/images/students-studying.jpg" alt="Students studying" onerror="this.style.border='3px solid red'; this.alt='FAILED: students-studying.jpg';">
+        </div>
+        <div class="image-item">
+            <h3>Mentorship</h3>
+            <img src="/images/mentorship.jpg" alt="Mentorship" onerror="this.style.border='3px solid red'; this.alt='FAILED: mentorship.jpg';">
+        </div>
+        <div class="image-item">
+            <h3>Aspiration</h3>
+            <img src="/images/aspiration.jpg" alt="Aspiration" onerror="this.style.border='3px solid red'; this.alt='FAILED: aspiration.jpg';">
+        </div>
+        <div class="image-item">
+            <h3>Maze</h3>
+            <img src="/images/maze.jpg" alt="Maze" onerror="this.style.border='3px solid red'; this.alt='FAILED: maze.jpg';">
+        </div>
+        <div class="image-item">
+            <h3>Achievement</h3>
+            <img src="/images/achievement.jpg" alt="Achievement" onerror="this.style.border='3px solid red'; this.alt='FAILED: achievement.jpg';">
+        </div>
+    </div>
+    <p>Visit <a href="http://localhost:5173/test-images.html">http://localhost:5173/test-images.html</a> to test images</p>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "mentorconnect-full-stack",
+  "version": "1.0.0",
+  "description": "MentorConnect - Government Exam Mentorship Platform (Full Stack)",
+  "main": "index.js",
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" --names \"BACKEND,FRONTEND\" --prefix-colors \"bgBlue,bgMagenta\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run preview",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend",
+    "clean": "rm -rf backend/node_modules frontend/node_modules node_modules",
+    "clean:win": "rmdir /s /q backend\\node_modules frontend\\node_modules node_modules",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mentorship",
+    "education",
+    "government-exams",
+    "UPSC",
+    "SSC",
+    "full-stack"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
