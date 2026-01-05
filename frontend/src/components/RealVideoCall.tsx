@@ -357,8 +357,10 @@ export function RealVideoCall() {
         // Show success message
         alert('Thank you for your feedback! ' + 
               (data.bothFeedbacksSubmitted 
-                ? 'Session completed and payment processed based on attendance.' 
-                : 'Waiting for the other participant to submit feedback.'));
+                ? (data.paymentReleased 
+                    ? 'Session completed and payment processed successfully!' 
+                    : 'Both feedbacks submitted. Payment processing may require admin review.')
+                : 'Waiting for the other participant to submit feedback before payment can be released.'));
         
         if (data.bothFeedbacksSubmitted) {
           setSessionCompleted(true);

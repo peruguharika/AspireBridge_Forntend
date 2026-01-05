@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
-const ExamPrice = require('../models/ExamPrice');
 const { sendOTPEmail } = require('../services/emailService');
 
 // Generate JWT Token
@@ -19,7 +18,7 @@ const generateToken = (userId) => {
 // @access  Public
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, userType, examType, examCategory, examSubCategory, examCleared, rank, year, bio, scorecardUrl } = req.body;
+    const { name, email, password, userType, examType, examCategory, examSubCategory, rank, year, documentUrl, scorecardUrl } = req.body;
 
     // Validation
     if (!name || !email || !password || !userType) {
@@ -38,18 +37,6 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Get hourly rate for achievers based on exam subcategory
-    let hourlyRate = 500; // default rate
-    if (userType === 'achiever' && examSubCategory) {
-      const examPrice = await ExamPrice.findOne({ 
-        subCategory: examSubCategory,
-        isActive: true 
-      });
-      if (examPrice) {
-        hourlyRate = examPrice.hourlyRate;
-      }
-    }
-
     // Create new user
     const user = new User({
       name,
@@ -59,12 +46,9 @@ router.post('/signup', async (req, res) => {
       examType: examType || '',
       examCategory: examCategory || '',
       examSubCategory: examSubCategory || '',
-      examCleared: examCleared || '',
       rank: rank || '',
       year: year || '',
-      bio: bio || '',
-      scorecardUrl: scorecardUrl || '',
-      hourlyRate: hourlyRate,
+      documentUrl: documentUrl || scorecardUrl || '', // Support both keys
       approved: userType === 'aspirant' ? true : false,
       approvalStatus: userType === 'aspirant' ? 'approved' : 'pending',
       otpVerified: false
@@ -269,53 +253,10 @@ router.post('/admin-login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Debug logging
-    console.log('Admin login attempt:');
-    console.log('Received email:', email);
-    console.log('Received password:', password);
-    console.log('Expected email:', process.env.ADMIN_EMAIL);
-    console.log('Expected password:', process.env.ADMIN_PASSWORD);
-    console.log('Email match:', email === process.env.ADMIN_EMAIL);
-    console.log('Password match:', password === process.env.ADMIN_PASSWORD);
-
     // Check against environment variables
     if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-      // Find or create admin user
-      let adminUser = await User.findOne({ email: process.env.ADMIN_EMAIL, userType: 'admin' });
-      
-      if (!adminUser) {
-        // Create admin user if doesn't exist
-        const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-        adminUser = new User({
-          name: 'Platform Admin',
-          email: process.env.ADMIN_EMAIL,
-          password: hashedPassword,
-          userType: 'admin',
-          approved: true,
-          approvalStatus: 'approved'
-        });
-        await adminUser.save();
-        console.log('✅ Admin user created');
-
-        // Create admin wallet if doesn't exist
-        const Wallet = require('../models/Wallet');
-        const existingWallet = await Wallet.findOne({ userId: adminUser._id });
-        if (!existingWallet) {
-          const adminWallet = new Wallet({
-            userId: adminUser._id,
-            userType: 'admin',
-            balance: 0,
-            totalEarnings: 0,
-            totalWithdrawn: 0,
-            transactions: []
-          });
-          await adminWallet.save();
-          console.log('✅ Admin wallet created');
-        }
-      }
-
       const token = jwt.sign(
-        { userId: adminUser._id, email, role: 'admin' },
+        { email, role: 'admin' },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -323,14 +264,7 @@ router.post('/admin-login', async (req, res) => {
       res.json({
         success: true,
         message: 'Admin login successful',
-        token,
-        userId: adminUser._id,
-        user: {
-          id: adminUser._id,
-          name: adminUser.name,
-          email: adminUser.email,
-          userType: adminUser.userType
-        }
+        token
       });
     } else {
       res.status(401).json({

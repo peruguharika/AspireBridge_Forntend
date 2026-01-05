@@ -1,53 +1,40 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter with real email configuration
+// Create transporter with fallback configuration
 let transporter;
-let isRealEmailMode = false;
 
 try {
-  // Check if we have real email credentials
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD && 
-      process.env.EMAIL_USER !== 'your-email@gmail.com' && 
-      process.env.EMAIL_PASSWORD !== 'your-app-password') {
-    
-    transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT) || 587,
-      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      },
-      // Add these for better compatibility
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+  transporter = nodemailer.createTransporter({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT) || 587,
+    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+    auth: {
+      user: process.env.EMAIL_USER || 'your-email@gmail.com',
+      pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+    },
+    // Add these for better compatibility
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
 
-    // Verify transporter configuration
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ Email configuration error:', error);
-        console.log('📧 Email service will run in mock mode');
-        isRealEmailMode = false;
-      } else {
-        console.log('✅ Email server is ready to send messages');
-        console.log('📧 Real email mode enabled');
-        isRealEmailMode = true;
-      }
-    });
-  } else {
-    throw new Error('Email credentials not configured');
-  }
+  // Verify transporter configuration
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Email configuration error:', error);
+      console.log('📧 Email service will run in mock mode');
+    } else {
+      console.log('✅ Email server is ready to send messages');
+    }
+  });
 } catch (error) {
   console.error('❌ Failed to create email transporter:', error);
   console.log('📧 Email service will run in mock mode');
-  isRealEmailMode = false;
   
   // Create a mock transporter for development
   transporter = {
     sendMail: async (options) => {
-      console.log('📧 [MOCK EMAIL] - Configure real email credentials to send actual emails');
+      console.log('📧 [MOCK EMAIL]');
       console.log('To:', options.to);
       console.log('Subject:', options.subject);
       console.log('Content:', options.text || 'HTML content');
@@ -328,200 +315,11 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   });
 };
 
-/**
- * Send session reminder email to aspirant
- */
-const sendAspirantSessionReminder = async (aspirantEmail, aspirantName, achieverName, sessionDetails) => {
-  const { date, time, roomId } = sessionDetails;
-  const sessionUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/session/${roomId}`;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }
-        .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: white; padding: 30px; border-radius: 0 0 8px 8px; }
-        .session-details { background-color: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb; }
-        .button { display: inline-block; background-color: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
-        .reminder-box { background-color: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🔔 Session Reminder</h1>
-        </div>
-        <div class="content">
-          <p>Hi ${aspirantName},</p>
-          <div class="reminder-box">
-            <h3>⏰ Your session starts in 10 minutes!</h3>
-          </div>
-          <p>Your mentorship session with <strong>${achieverName}</strong> is about to begin.</p>
-          
-          <div class="session-details">
-            <h3>📅 Session Details:</h3>
-            <p><strong>Mentor:</strong> ${achieverName}</p>
-            <p><strong>Date:</strong> ${date}</p>
-            <p><strong>Time:</strong> ${time}</p>
-            <p><strong>Duration:</strong> 60 minutes</p>
-          </div>
-
-          <p>Please join the session now:</p>
-          <a href="${sessionUrl}" class="button">🎥 Join Session</a>
-          
-          <p><strong>Important:</strong></p>
-          <ul>
-            <li>Make sure you have a stable internet connection</li>
-            <li>Test your camera and microphone beforehand</li>
-            <li>Have your questions ready</li>
-            <li>Join a few minutes early to avoid any technical issues</li>
-          </ul>
-
-          <p>Best regards,<br>MentorConnect Team</p>
-        </div>
-        <div class="footer">
-          <p>© 2024 MentorConnect. All rights reserved.</p>
-          <p>This is an automated reminder. Please do not reply.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const text = `
-    MentorConnect - Session Reminder
-    
-    Hi ${aspirantName},
-    
-    Your session starts in 10 minutes!
-    
-    Your mentorship session with ${achieverName} is about to begin.
-    
-    Session Details:
-    - Mentor: ${achieverName}
-    - Date: ${date}
-    - Time: ${time}
-    - Duration: 60 minutes
-    
-    Join the session: ${sessionUrl}
-    
-    Make sure you have a stable internet connection and join a few minutes early.
-  `;
-
-  return await sendEmail({
-    to: aspirantEmail,
-    subject: `🔔 Session Starting Soon - Meeting with ${achieverName}`,
-    html,
-    text
-  });
-};
-
-/**
- * Send session reminder email to achiever
- */
-const sendAchieverSessionReminder = async (achieverEmail, achieverName, aspirantName, sessionDetails) => {
-  const { date, time, roomId } = sessionDetails;
-  const sessionUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/session/${roomId}`;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }
-        .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: white; padding: 30px; border-radius: 0 0 8px 8px; }
-        .session-details { background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981; }
-        .button { display: inline-block; background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
-        .reminder-box { background-color: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🔔 Session Reminder</h1>
-        </div>
-        <div class="content">
-          <p>Hi ${achieverName},</p>
-          <div class="reminder-box">
-            <h3>⏰ Your mentoring session starts in 10 minutes!</h3>
-          </div>
-          <p>You have a scheduled mentorship session with <strong>${aspirantName}</strong> that is about to begin.</p>
-          
-          <div class="session-details">
-            <h3>📅 Session Details:</h3>
-            <p><strong>Aspirant:</strong> ${aspirantName}</p>
-            <p><strong>Date:</strong> ${date}</p>
-            <p><strong>Time:</strong> ${time}</p>
-            <p><strong>Duration:</strong> 60 minutes</p>
-          </div>
-
-          <p>Please join the session now:</p>
-          <a href="${sessionUrl}" class="button">🎥 Join Session</a>
-          
-          <p><strong>As a Mentor, please remember:</strong></p>
-          <ul>
-            <li>Join a few minutes early to welcome your mentee</li>
-            <li>Ensure you have a quiet, professional environment</li>
-            <li>Test your camera and microphone beforehand</li>
-            <li>Be prepared to guide and support your mentee</li>
-            <li>Have relevant resources or materials ready if needed</li>
-          </ul>
-
-          <p>Thank you for being an amazing mentor!</p>
-          <p>Best regards,<br>MentorConnect Team</p>
-        </div>
-        <div class="footer">
-          <p>© 2024 MentorConnect. All rights reserved.</p>
-          <p>This is an automated reminder. Please do not reply.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const text = `
-    MentorConnect - Session Reminder
-    
-    Hi ${achieverName},
-    
-    Your mentoring session starts in 10 minutes!
-    
-    You have a scheduled mentorship session with ${aspirantName} that is about to begin.
-    
-    Session Details:
-    - Aspirant: ${aspirantName}
-    - Date: ${date}
-    - Time: ${time}
-    - Duration: 60 minutes
-    
-    Join the session: ${sessionUrl}
-    
-    Please join a few minutes early and ensure you have a professional environment ready.
-  `;
-
-  return await sendEmail({
-    to: achieverEmail,
-    subject: `🔔 Mentoring Session Starting Soon - Meeting with ${aspirantName}`,
-    html,
-    text
-  });
-};
-
 module.exports = {
   sendEmail,
   sendOTPEmail,
   sendBookingConfirmation,
   sendWelcomeEmail,
   sendPasswordResetEmail,
-  sendAspirantSessionReminder,
-  sendAchieverSessionReminder,
-  transporter,
-  isRealEmailMode: () => isRealEmailMode
+  transporter
 };

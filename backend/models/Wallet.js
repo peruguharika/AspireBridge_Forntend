@@ -57,6 +57,12 @@ const WalletSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Booking'
     },
+    paymentId: {
+      type: String
+    },
+    orderId: {
+      type: String
+    },
     razorpayTransactionId: {
       type: String
     },

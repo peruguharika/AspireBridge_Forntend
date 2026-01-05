@@ -70,37 +70,7 @@ const validateZegoCallback = (signature, timestamp, nonce) => {
   }
 };
 
-/**
- * Generate ZegoCloud UIKit token for video calling
- * @param {string} userId - User ID
- * @param {string} roomId - Room ID
- * @returns {Promise<Object>} - Generated token data
- */
-const generateZegoUIKitToken = async (userId, roomId) => {
-  try {
-    const appId = parseInt(process.env.ZEGOCLOUD_APP_ID);
-    const serverSecret = process.env.ZEGOCLOUD_SERVER_SECRET;
-    
-    if (!appId || !serverSecret) {
-      throw new Error('ZegoCloud credentials not configured');
-    }
-    
-    // For UIKit, we return the credentials for frontend token generation
-    return {
-      appId: appId,
-      serverSecret: serverSecret,
-      roomId: roomId,
-      userId: userId
-    };
-
-  } catch (error) {
-    console.error('Generate ZegoCloud UIKit Token Error:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   generateZegoToken,
-  generateZegoTokenForVideoCall: generateZegoUIKitToken,
   validateZegoCallback
 };

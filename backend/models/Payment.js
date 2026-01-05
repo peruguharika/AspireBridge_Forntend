@@ -16,7 +16,7 @@ const PaymentSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['booking', 'masterclass', 'wallet_topup'],
+    enum: ['booking', 'masterclass', 'session', 'wallet_topup'],
     required: true
   },
   razorpayOrderId: {
@@ -51,10 +51,6 @@ const PaymentSchema = new mongoose.Schema({
   refundAmount: {
     type: Number,
     default: 0
-  },
-  refundReason: {
-    type: String,
-    default: ''
   },
   // Payment distribution
   adminFee: {

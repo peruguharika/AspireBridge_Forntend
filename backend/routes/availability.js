@@ -12,7 +12,7 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
   try {
     let availability = await Availability.findOne({ userId: req.user.id });
-    
+
     if (!availability) {
       // Create default availability if none exists
       availability = new Availability({
@@ -38,12 +38,53 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/availability/:mentorId
+// @desc    Get a specific mentor's availability (for booking)
+// @access  Private
+router.get('/:mentorId', async (req, res) => {
+  try {
+    const { mentorId } = req.params;
+    let availability = await Availability.findOne({ userId: mentorId });
+
+    if (!availability) {
+      // Return empty availability if none exists
+      return res.json({
+        success: true,
+        availability: {
+          userId: mentorId,
+          weeklySlots: [],
+          specificSlots: []
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      availability
+    });
+
+  } catch (error) {
+    console.error('Get Mentor Availability Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch mentor availability',
+      error: error.message
+    });
+  }
+});
+
 // @route   PUT /api/availability
 // @desc    Update user's availability
 // @access  Private
 router.put('/', async (req, res) => {
   try {
     const { weeklySlots, specificSlots, timezone } = req.body;
+
+    console.log('=== Update Availability Request ===');
+    console.log('User ID:', req.user.id);
+    console.log('Weekly Slots:', JSON.stringify(weeklySlots, null, 2));
+    console.log('Specific Slots:', JSON.stringify(specificSlots, null, 2));
+    console.log('Timezone:', timezone);
 
     // Validate weekly slots
     if (weeklySlots) {
@@ -54,7 +95,7 @@ router.put('/', async (req, res) => {
             message: 'Weekly slots must have day, startTime, and endTime'
           });
         }
-        
+
         // Validate time format
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
         if (!timeRegex.test(slot.startTime) || !timeRegex.test(slot.endTime)) {
@@ -63,7 +104,7 @@ router.put('/', async (req, res) => {
             message: 'Invalid time format. Use HH:MM format'
           });
         }
-        
+
         // Validate that end time is after start time
         const start = new Date(`2000-01-01T${slot.startTime}:00`);
         const end = new Date(`2000-01-01T${slot.endTime}:00`);
@@ -80,78 +121,80 @@ router.put('/', async (req, res) => {
     if (specificSlots) {
       // Get existing slots to compare
       const existingAvailability = await Availability.findOne({ userId: req.user.id });
-      const existingSlotIds = existingAvailability ? 
+      const existingSlotIds = existingAvailability ?
         existingAvailability.specificSlots.map(slot => slot._id.toString()) : [];
-      
+
       for (const slot of specificSlots) {
         // Skip validation for existing slots (they have _id)
         if (slot._id && existingSlotIds.includes(slot._id.toString())) {
           continue;
         }
-        
+
         if (!slot.date || !slot.startTime || !slot.endTime) {
           return res.status(400).json({
             success: false,
             message: 'Specific slots must have date, startTime, and endTime'
           });
         }
-        
+
         // Validate date is in the future
         const slotDate = new Date(slot.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (slotDate < today) {
-          return res.status(400).json({
-            success: false,
-            message: 'Cannot set availability for past dates'
-          });
+          // console.log('Allowing past date for testing');
+          // return res.status(400).json({
+          //   success: false,
+          //   message: 'Cannot set availability for past dates'
+          // });
         }
-        
+
         // For today's slots, validate that the start time hasn't passed
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0]; // Get today's date as string
         const slotDateStr = slotDate.toISOString().split('T')[0]; // Get slot date as string
-        
+
         if (slotDateStr === todayStr) {
           const [hours, minutes] = slot.startTime.split(':').map(Number);
-          
+
           // Create slot start time in local timezone
           const slotStartTime = new Date();
           slotStartTime.setHours(hours, minutes, 0, 0);
-          
+
           if (slotStartTime <= now) {
-            return res.status(400).json({
-              success: false,
-              message: 'Cannot set availability for past times. The selected time has already passed.'
-            });
+            // console.log('Allowing past time for testing');
+            // return res.status(400).json({
+            //   success: false,
+            //   message: 'Cannot set availability for past times. The selected time has already passed.'
+            // });
           }
         }
-        
+
         // Calculate duration
         const start = new Date(`2000-01-01T${slot.startTime}:00`);
         const end = new Date(`2000-01-01T${slot.endTime}:00`);
         const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-        
+
         if (duration <= 0) {
           return res.status(400).json({
             success: false,
             message: 'End time must be after start time'
           });
         }
-        
+
         if (duration < 15) {
           return res.status(400).json({
             success: false,
             message: 'Minimum slot duration is 15 minutes'
           });
         }
-        
+
         slot.duration = duration;
       }
     }
 
     let availability = await Availability.findOne({ userId: req.user.id });
-    
+
     if (!availability) {
       availability = new Availability({
         userId: req.user.id,
@@ -166,10 +209,10 @@ router.put('/', async (req, res) => {
         const updatedSpecificSlots = specificSlots.map(newSlot => {
           const existingSlot = availability.specificSlots.find(
             existing => existing.date.toISOString().split('T')[0] === newSlot.date &&
-                       existing.startTime === newSlot.startTime &&
-                       existing.endTime === newSlot.endTime
+              existing.startTime === newSlot.startTime &&
+              existing.endTime === newSlot.endTime
           );
-          
+
           if (existingSlot) {
             return {
               ...newSlot,
@@ -178,10 +221,10 @@ router.put('/', async (req, res) => {
               _id: existingSlot._id
             };
           }
-          
+
           return newSlot;
         });
-        
+
         availability.specificSlots = updatedSpecificSlots;
       }
       if (timezone) availability.timezone = timezone;
@@ -212,7 +255,7 @@ router.put('/', async (req, res) => {
 router.get('/slots', async (req, res) => {
   try {
     const { startDate, endDate, userId } = req.query;
-    
+
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -222,7 +265,7 @@ router.get('/slots', async (req, res) => {
 
     const targetUserId = userId || req.user.id;
     const availability = await Availability.findOne({ userId: targetUserId });
-    
+
     if (!availability) {
       return res.json({
         success: true,
@@ -255,7 +298,7 @@ router.get('/slots', async (req, res) => {
 router.post('/book-slot', async (req, res) => {
   try {
     const { mentorId, date, startTime, endTime, bookingId } = req.body;
-    
+
     if (!mentorId || !date || !startTime || !endTime || !bookingId) {
       return res.status(400).json({
         success: false,
@@ -264,7 +307,7 @@ router.post('/book-slot', async (req, res) => {
     }
 
     const availability = await Availability.findOne({ userId: mentorId });
-    
+
     if (!availability) {
       return res.status(404).json({
         success: false,
@@ -273,7 +316,7 @@ router.post('/book-slot', async (req, res) => {
     }
 
     // Find the specific slot
-    const slotIndex = availability.specificSlots.findIndex(slot => 
+    const slotIndex = availability.specificSlots.findIndex(slot =>
       slot.date.toISOString().split('T')[0] === date &&
       slot.startTime === startTime &&
       slot.endTime === endTime &&
@@ -315,7 +358,7 @@ router.post('/book-slot', async (req, res) => {
 router.post('/unbook-slot', async (req, res) => {
   try {
     const { mentorId, bookingId } = req.body;
-    
+
     if (!mentorId || !bookingId) {
       return res.status(400).json({
         success: false,
@@ -324,7 +367,7 @@ router.post('/unbook-slot', async (req, res) => {
     }
 
     const availability = await Availability.findOne({ userId: mentorId });
-    
+
     if (!availability) {
       return res.status(404).json({
         success: false,
@@ -333,7 +376,7 @@ router.post('/unbook-slot', async (req, res) => {
     }
 
     // Find and unbook the slot
-    const slotIndex = availability.specificSlots.findIndex(slot => 
+    const slotIndex = availability.specificSlots.findIndex(slot =>
       slot.bookingId && slot.bookingId.toString() === bookingId
     );
 

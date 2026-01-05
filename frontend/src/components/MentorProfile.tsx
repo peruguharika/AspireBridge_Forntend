@@ -86,7 +86,7 @@ export function MentorProfile({ userType, userId, onLogout }: MentorProfileProps
     // Calculate duration and amount based on the selected slot
     const duration = slot.duration || 60; // Default to 60 minutes if not specified
     const hourlyRate = mentor?.hourlyRate || 500;
-    const amount = (hourlyRate / 60) * duration;
+    const amount = Math.round((hourlyRate / 60) * duration); // Round to avoid floating point issues
 
     // Check wallet balance first (for aspirants)
     if (userType === 'aspirant') {
@@ -100,18 +100,30 @@ export function MentorProfile({ userType, userId, onLogout }: MentorProfileProps
         if (walletResponse.ok) {
           const walletData = await walletResponse.json();
           const walletBalance = walletData.wallet?.balance || 0;
+          const lockedBalance = walletData.wallet?.lockedBalance || 0;
+          const availableBalance = walletData.wallet?.availableBalance || (walletBalance - lockedBalance);
 
-          if (walletBalance >= amount) {
+          console.log('💰 Wallet Balance Check:', {
+            amount,
+            availableBalance,
+            walletBalance,
+            lockedBalance,
+            comparison: availableBalance >= amount
+          });
+
+          if (availableBalance >= amount) {
             // Sufficient balance - proceed with wallet payment
             handleWalletBooking(slot, amount, duration);
             return;
           } else {
             // Insufficient balance - show options
-            const addAmount = amount - walletBalance;
+            const addAmount = amount - availableBalance;
             const choice = confirm(
               `Insufficient wallet balance!\n\n` +
               `Required: ₹${amount.toFixed(2)}\n` +
-              `Available: ₹${walletBalance.toFixed(2)}\n` +
+              `Available: ₹${availableBalance.toFixed(2)}\n` +
+              `Total Balance: ₹${walletBalance.toFixed(2)}\n` +
+              `Locked Balance: ₹${lockedBalance.toFixed(2)}\n` +
               `Need to add: ₹${addAmount.toFixed(2)}\n\n` +
               `Click OK to add money to wallet, or Cancel to pay directly via Razorpay`
             );

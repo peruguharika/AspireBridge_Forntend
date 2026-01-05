@@ -25,12 +25,11 @@ const UserSchema = new mongoose.Schema({
     required: true
   },
   // Aspirant specific fields
-  examType: {
+  examType: { // Can be used as Exam Name
     type: String,
     default: ''
   },
-  // Achiever specific fields
-  examCategory: {
+  examCategory: { // e.g. UPSC, SSC
     type: String,
     default: ''
   },
@@ -38,10 +37,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  examCleared: {
-    type: String,
-    default: ''
-  },
+  // Achiever specific fields
   rank: {
     type: String,
     default: ''
@@ -58,33 +54,9 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  scorecardUrl: {
+  documentUrl: { // For storing scorecard/certificate
     type: String,
     default: ''
-  },
-  hourlyRate: {
-    type: Number,
-    default: 500
-  },
-  experience: {
-    type: String,
-    default: '1'
-  },
-  rating: {
-    type: Number,
-    default: 4.8
-  },
-  reviewsCount: {
-    type: Number,
-    default: 0
-  },
-  sessionsCompleted: {
-    type: Number,
-    default: 0
-  },
-  studentsHelped: {
-    type: Number,
-    default: 0
   },
   approved: {
     type: Boolean,
@@ -119,26 +91,17 @@ const UserSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  },
-  // Social features
-  followers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  following: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }]
+  }
 }, {
   timestamps: true
 });
 
 // Hash password before saving
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -149,7 +112,7 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-UserSchema.methods.comparePassword = async function(candidatePassword) {
+UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

@@ -349,8 +349,16 @@ export function AspirantWallet({ userId }: AspirantWalletProps) {
               <span className="text-blue-100">Wallet Balance</span>
             </div>
             <div className="text-3xl font-bold">
-              ₹{wallet?.balance?.toFixed(2) || '0.00'}
+              ₹{wallet?.availableBalance?.toFixed(2) || '0.00'}
             </div>
+            <div className="text-sm text-blue-100 mt-1">
+              Available Balance
+            </div>
+            {wallet?.lockedBalance > 0 && (
+              <div className="text-xs text-blue-200 mt-1">
+                Total: ₹{wallet?.balance?.toFixed(2)} | Locked: ₹{wallet?.lockedBalance?.toFixed(2)}
+              </div>
+            )}
           </div>
           <button
             onClick={() => setShowAddMoney(true)}

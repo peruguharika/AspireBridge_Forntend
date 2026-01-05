@@ -41,7 +41,7 @@ const BookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'rejected'],
+    enum: ['pending', 'confirmed', 'completed', 'cancelled'],
     default: 'pending'
   },
   paymentId: {
@@ -59,25 +59,20 @@ const BookingSchema = new mongoose.Schema({
   },
   refundStatus: {
     type: String,
-    enum: ['none', 'processing', 'completed', 'failed'],
+    enum: ['none', 'processing', 'completed'],
     default: 'none'
   },
   refundAmount: {
     type: Number,
     default: 0
   },
-  rejectionReason: {
+  sessionStatus: {
     type: String,
-    default: ''
+    enum: ['scheduled', 'active', 'completed'],
+    default: 'scheduled'
   },
-  rejectedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
-  rejectedAt: {
-    type: Date,
-    default: null
+  sessionStartedAt: {
+    type: Date
   },
   cancelledAt: {
     type: Date

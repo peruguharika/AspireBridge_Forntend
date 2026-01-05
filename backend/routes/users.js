@@ -70,22 +70,7 @@ router.get('/', async (req, res) => {
     
     let query = {};
     if (userType) query.userType = userType;
-    
-    // For approved filter, check both approved field and approvalStatus
-    if (approved !== undefined) {
-      const isApproved = approved === 'true';
-      if (isApproved) {
-        query.$or = [
-          { approved: true },
-          { approvalStatus: 'approved' }
-        ];
-      } else {
-        query.$and = [
-          { approved: { $ne: true } },
-          { approvalStatus: { $ne: 'approved' } }
-        ];
-      }
-    }
+    if (approved !== undefined) query.approved = approved === 'true';
 
     const users = await User.find(query).select('-password').sort({ createdAt: -1 });
 

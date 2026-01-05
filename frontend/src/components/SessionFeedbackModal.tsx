@@ -130,8 +130,8 @@ export function SessionFeedbackModal({
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
               💡 Your feedback helps improve the mentoring experience for everyone. 
-              Once both participants submit feedback, the session will be completed and 
-              payment will be processed based on attendance.
+              <strong>Payment will only be released when both participants submit feedback</strong> and 
+              attendance requirements are verified.
             </p>
           </div>
 

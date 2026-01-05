@@ -219,36 +219,10 @@ export function SessionDetails({ userType, userId }: SessionDetailsProps) {
   };
 
   const handleCompleteSession = async () => {
-    if (!session || userType !== 'achiever') return;
-
-    const review = prompt('Please provide a brief review of the session (optional):');
-    const rating = prompt('Please rate the session from 1-5 (optional):');
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/sessions/${session._id}/complete`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('adminToken')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          review: review || '',
-          rating: rating ? parseInt(rating) : null,
-          completionReason: sessionStatus?.attendancePattern === 'achiever-only' ? 'achiever-waited' : 'normal'
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert('Session completed successfully! Payment has been processed to your wallet.');
-        navigate('/dashboard/achiever');
-      } else {
-        alert('Failed to complete session: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error completing session:', error);
-      alert('Error completing session. Please try again.');
-    }
+    // 🔒 SECURITY: Manual completion is no longer allowed
+    // Sessions can only be completed through dual feedback submission
+    alert('Sessions can only be completed when both participants submit feedback. Please use the video call interface to provide feedback.');
+    return;
   };
 
   const formatDateTime = (date: string, time: string) => {
@@ -455,15 +429,26 @@ export function SessionDetails({ userType, userId }: SessionDetailsProps) {
                       {userType === 'achiever' && sessionStatus?.gracePeriodExpired && 
                        sessionStatus?.attendancePattern === 'achiever-only' && (
                         <div className="mt-3">
-                          <button
-                            onClick={handleCompleteSession}
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-                          >
-                            Complete Session & Receive Payment
-                          </button>
-                          <p className="text-xs text-green-700 mt-1 text-center">
-                            Student didn't join. You can complete the session and receive payment.
-                          </p>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 className="font-medium text-blue-900 mb-2">💰 Payment Release Process</h4>
+                            <p className="text-sm text-blue-800 mb-3">
+                              The student didn't join the session. You can still receive payment, but both participants must submit feedback first.
+                            </p>
+                            <div className="space-y-2 text-sm text-blue-700">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                <span>Join the video call and submit your feedback</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                                <span>Student must also submit feedback (or admin override)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                                <span>Payment automatically released when both feedbacks received</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

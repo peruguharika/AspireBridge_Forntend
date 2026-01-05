@@ -18,7 +18,7 @@ const razorpay = new Razorpay({
 router.get('/user/:userId', authenticateToken, async (req, res) => {
   try {
     let wallet = await Wallet.findOne({ userId: req.params.userId });
-    
+
     if (!wallet) {
       // Create wallet if it doesn't exist
       const userType = req.user.userType || 'achiever'; // Default to achiever
@@ -26,6 +26,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         userId: req.params.userId,
         userType,
         balance: 0,
+        lockedBalance: 0,
         totalEarnings: 0,
         totalWithdrawn: 0,
         transactions: []
@@ -33,9 +34,15 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
       await wallet.save();
     }
 
+    // Calculate available balance (balance - lockedBalance)
+    const availableBalance = wallet.balance - (wallet.lockedBalance || 0);
+
     res.json({
       success: true,
-      wallet
+      wallet: {
+        ...wallet.toObject(),
+        availableBalance: Math.max(0, availableBalance) // Ensure non-negative
+      }
     });
 
   } catch (error) {
@@ -43,6 +50,63 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch wallet',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/wallets/topup
+// @desc    Add money to wallet after successful payment
+// @access  Private
+router.post('/topup', authenticateToken, async (req, res) => {
+  try {
+    const { paymentId, orderId, userId, amount } = req.body;
+
+    console.log('💰 Wallet Topup Request:', { paymentId, orderId, userId, amount });
+
+    // Find or create wallet
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = new Wallet({
+        userId,
+        balance: 0,
+        transactions: []
+      });
+    }
+
+    // Add amount to balance
+    wallet.balance += parseFloat(amount);
+
+    // Add transaction record
+    wallet.transactions.push({
+      type: 'credit',
+      amount: parseFloat(amount),
+      description: 'Wallet Top-up',
+      paymentId: paymentId,
+      orderId: orderId,
+      status: 'completed',
+      date: new Date()
+    });
+
+    await wallet.save();
+
+    console.log(`✅ Wallet topup successful: ₹${amount} added. New balance: ₹${wallet.balance}`);
+
+    res.json({
+      success: true,
+      message: 'Wallet topped up successfully',
+      wallet: {
+        balance: wallet.balance,
+        userId: wallet.userId
+      },
+      newBalance: wallet.balance
+    });
+
+  } catch (error) {
+    console.error('❌ Wallet Topup Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to topup wallet',
       error: error.message
     });
   }
@@ -126,10 +190,10 @@ router.post('/withdrawal', authenticateToken, async (req, res) => {
 
     // DO NOT deduct amount from wallet yet - wait for admin approval
     // The amount will be deducted only after admin approves the withdrawal
-    
+
     console.log(`✅ Withdrawal request created: ${withdrawalRequest._id}`);
     console.log(`💰 Amount: ₹${amount} (Net: ₹${netAmount}) - Status: pending admin approval`);
-    
+
     // Send email notification to user
     const User = require('../models/User');
     const user = await User.findById(userId);
@@ -210,7 +274,7 @@ router.get('/withdrawals/:userId', authenticateToken, async (req, res) => {
 router.put('/bank-details/:userId', authenticateToken, async (req, res) => {
   try {
     const { bankDetails } = req.body;
-    
+
     // Validate IFSC code format
     if (bankDetails.ifscCode) {
       const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
@@ -263,11 +327,11 @@ router.get('/admin/overview', authenticateToken, async (req, res) => {
   try {
     // Get admin wallet
     const adminWallet = await Wallet.findOne({ userType: 'admin' });
-    
+
     // Get all withdrawal requests
     const pendingWithdrawals = await WithdrawalRequest.find({ status: 'pending' });
     const processingWithdrawals = await WithdrawalRequest.find({ status: 'processing' });
-    
+
     // Calculate total platform earnings
     const totalAdminFees = adminWallet ? adminWallet.totalEarnings : 0;
     const totalPendingWithdrawals = pendingWithdrawals.reduce((sum, w) => sum + w.amount, 0);
@@ -305,18 +369,18 @@ router.get('/admin/overview', authenticateToken, async (req, res) => {
 router.post('/razorpay-webhook', async (req, res) => {
   try {
     const { event, payload } = req.body;
-    
+
     console.log(`📡 Razorpay webhook received: ${event}`);
-    
+
     if (event === 'payout.processed' || event === 'payout.failed' || event === 'payout.reversed') {
       const payout = payload.payout.entity;
       const payoutId = payout.id;
-      
+
       console.log(`🔄 Processing payout webhook: ${payoutId} - Status: ${payout.status}`);
-      
+
       // Find the withdrawal request
       const withdrawalRequest = await WithdrawalRequest.findOne({ razorpayPayoutId: payoutId });
-      
+
       if (withdrawalRequest) {
         // Update withdrawal status based on payout status
         if (payout.status === 'processed') {
@@ -326,13 +390,13 @@ router.post('/razorpay-webhook', async (req, res) => {
         } else if (payout.status === 'failed' || payout.status === 'reversed') {
           withdrawalRequest.status = 'failed';
           withdrawalRequest.failureReason = payout.failure_reason || 'Payout failed';
-          
+
           // Refund the amount back to user's wallet
           const wallet = await Wallet.findById(withdrawalRequest.walletId);
           if (wallet) {
             wallet.balance += withdrawalRequest.amount;
             wallet.totalWithdrawn -= withdrawalRequest.amount;
-            
+
             // Add refund transaction
             wallet.transactions.push({
               type: 'credit',
@@ -341,22 +405,22 @@ router.post('/razorpay-webhook', async (req, res) => {
               description: `Withdrawal refund - ${withdrawalRequest.failureReason}`,
               timestamp: new Date()
             });
-            
+
             await wallet.save();
             console.log(`💰 Refunded ₹${withdrawalRequest.amount} back to wallet`);
           }
         }
-        
+
         await withdrawalRequest.save();
-        
+
         console.log(`📊 Withdrawal ${withdrawalRequest._id} updated in settlements dashboard`);
       } else {
         console.log(`⚠️ No withdrawal request found for payout ID: ${payoutId}`);
       }
     }
-    
+
     res.status(200).json({ success: true });
-    
+
   } catch (error) {
     console.error('❌ Razorpay webhook error:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -368,21 +432,21 @@ router.post('/razorpay-webhook', async (req, res) => {
 // @access  Private/Admin
 router.get('/settlements-info', authenticateToken, async (req, res) => {
   try {
-    const completedWithdrawals = await WithdrawalRequest.find({ 
+    const completedWithdrawals = await WithdrawalRequest.find({
       status: 'completed',
       razorpayPayoutId: { $exists: true }
     }).sort({ completedAt: -1 }).limit(10);
-    
-    const processingWithdrawals = await WithdrawalRequest.find({ 
+
+    const processingWithdrawals = await WithdrawalRequest.find({
       status: 'processing',
       razorpayPayoutId: { $exists: true }
     }).sort({ processedAt: -1 });
-    
+
     const totalPayouts = await WithdrawalRequest.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, totalAmount: { $sum: '$netAmount' }, count: { $sum: 1 } } }
     ]);
-    
+
     res.json({
       success: true,
       settlementsInfo: {
@@ -403,12 +467,80 @@ router.get('/settlements-info', authenticateToken, async (req, res) => {
         }
       }
     });
-    
+
   } catch (error) {
     console.error('Settlements Info Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch settlements info',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/wallets/pay-from-wallet
+// @desc    Pay for a booking using wallet balance
+// @access  Private
+router.post('/pay-from-wallet', authenticateToken, async (req, res) => {
+  try {
+    const { amount, bookingId, achieverId, description } = req.body;
+    const userId = req.user.id;
+
+    // Find wallet
+    const wallet = await Wallet.findOne({ userId });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wallet not found. Please add money first.'
+      });
+    }
+
+    // Check balance
+    if (wallet.balance < amount) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient balance. Available: ₹${wallet.balance}`,
+        availableBalance: wallet.balance
+      });
+    }
+
+    // Deduct money
+    wallet.balance -= amount;
+
+    // Add transaction record
+    wallet.transactions.push({
+      type: 'debit',
+      amount,
+      source: 'booking',
+      description: description || 'Payment for mentorship session',
+      bookingId,
+      createdAt: new Date()
+    });
+
+    await wallet.save();
+
+    // Update booking status if bookingId is provided
+    if (bookingId) {
+      const Booking = require('../models/Booking');
+      await Booking.findByIdAndUpdate(bookingId, {
+        paymentStatus: 'completed',
+        status: 'confirmed',
+        paymentId: `WALLET_${Date.now()}`
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment successful from wallet',
+      newBalance: wallet.balance
+    });
+
+  } catch (error) {
+    console.error('Wallet payment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process wallet payment',
       error: error.message
     });
   }
@@ -424,7 +556,7 @@ router.post('/topup', authenticateToken, async (req, res) => {
 
     // Find or create wallet
     let wallet = await Wallet.findOne({ userId });
-    
+
     if (!wallet) {
       wallet = new Wallet({
         userId,
@@ -438,7 +570,7 @@ router.post('/topup', authenticateToken, async (req, res) => {
 
     // Add money to wallet
     wallet.balance += amount;
-    
+
     // Add transaction record
     wallet.transactions.push({
       type: 'credit',
