@@ -31,17 +31,35 @@ router.post('/create-order', authenticateToken, async (req, res) => {
 
     console.log(`[CreateOrder] Received: amount=${amount}, type=${type}, userId=${req.user.id}`);
 
-    // Create Razorpay order
-    const options = {
-      amount: amount * 100, // Amount in paise
-      currency: 'INR',
-      receipt: `receipt_${Date.now()}`,
-      payment_capture: 1
-    };
+    // DEV MODE: Skip Razorpay API call if credentials are not properly configured
+    let order;
+    const isDevelopmentMode = !process.env.RAZORPAY_KEY_SECRET ||
+      process.env.RAZORPAY_KEY_SECRET === 'make_it_long_and_random' ||
+      process.env.RAZORPAY_KEY_SECRET.length < 20;
 
-    console.log(`[CreateOrder] Razorpay Options:`, options);
-    const order = await razorpay.orders.create(options);
-    console.log(`[CreateOrder] Razorpay Order Created:`, order.id, "Amount:", order.amount);
+    if (isDevelopmentMode) {
+      // Use mock order for development
+      console.log(`[CreateOrder] DEV MODE: Using mock Razorpay order`);
+      order = {
+        id: `order_DEV_${Date.now()}`,
+        amount: amount * 100,
+        currency: 'INR',
+        status: 'created'
+      };
+      console.log(`[CreateOrder] Mock Order Created:`, order.id, "Amount:", order.amount);
+    } else {
+      // Create real Razorpay order
+      const options = {
+        amount: amount * 100, // Amount in paise
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`,
+        payment_capture: 1
+      };
+
+      console.log(`[CreateOrder] Razorpay Options:`, options);
+      order = await razorpay.orders.create(options);
+      console.log(`[CreateOrder] Razorpay Order Created:`, order.id, "Amount:", order.amount);
+    }
 
     // Calculate payment distribution
     const adminFee = Math.round(amount * 0.10); // 10%

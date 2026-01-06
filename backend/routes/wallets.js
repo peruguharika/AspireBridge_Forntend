@@ -64,29 +64,65 @@ router.post('/topup', authenticateToken, async (req, res) => {
 
     console.log('💰 Wallet Topup Request:', { paymentId, orderId, userId, amount });
 
-    // Find or create wallet
-    let wallet = await Wallet.findOne({ userId });
+    // Validate required fields
+    if (!userId || !amount) {
+      console.error('❌ Missing required fields:', { userId, amount });
+      return res.status(400).json({
+        success: false,
+        message: 'User ID and amount are required'
+      });
+    }
+
+    // Find wallet with multiple ID formats
+    let wallet = await Wallet.findOne({
+      $or: [
+        { userId: userId },
+        { userId: userId.toString() }
+      ]
+    });
+
+    console.log(`🔍 Wallet lookup for userId: ${userId}, Found: ${wallet ? 'Yes' : 'No'}`);
+
     if (!wallet) {
+      console.log('💳 Creating new wallet for user:', userId);
       wallet = new Wallet({
-        userId,
+        userId: userId,
+        userType: 'aspirant',
         balance: 0,
-        transactions: []
+        lockedBalance: 0,
+        totalEarnings: 0,
+        totalWithdrawn: 0,
+        transactions: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
     }
 
     // Add amount to balance
-    wallet.balance += parseFloat(amount);
+    const oldBalance = wallet.balance || 0;
+    wallet.balance = oldBalance + parseFloat(amount);
+
+    // Ensure transactions array exists
+    if (!wallet.transactions) {
+      wallet.transactions = [];
+    }
 
     // Add transaction record
     wallet.transactions.push({
       type: 'credit',
       amount: parseFloat(amount),
       description: 'Wallet Top-up',
-      paymentId: paymentId,
-      orderId: orderId,
+      paymentId: paymentId || '',
+      orderId: orderId || '',
       status: 'completed',
-      date: new Date()
+      date: new Date(),
+      createdAt: new Date(),
+      timestamp: new Date()
     });
+
+    wallet.updatedAt = new Date();
+
+    console.log(`💾 Saving wallet: Old balance: ₹${oldBalance}, New balance: ₹${wallet.balance}`);
 
     await wallet.save();
 
@@ -104,6 +140,7 @@ router.post('/topup', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Wallet Topup Error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Failed to topup wallet',
@@ -546,59 +583,5 @@ router.post('/pay-from-wallet', authenticateToken, async (req, res) => {
   }
 });
 
-// @route   POST /api/wallets/topup
-// @desc    Add money to wallet (for aspirants)
-// @access  Private
-router.post('/topup', authenticateToken, async (req, res) => {
-  try {
-    const { amount, paymentId, orderId } = req.body;
-    const userId = req.user.id;
-
-    // Find or create wallet
-    let wallet = await Wallet.findOne({ userId });
-
-    if (!wallet) {
-      wallet = new Wallet({
-        userId,
-        userType: 'aspirant',
-        balance: 0,
-        totalEarnings: 0,
-        totalWithdrawn: 0,
-        transactions: []
-      });
-    }
-
-    // Add money to wallet
-    wallet.balance += amount;
-
-    // Add transaction record
-    wallet.transactions.push({
-      type: 'credit',
-      amount,
-      source: 'wallet_topup',
-      description: 'Money added to wallet',
-      paymentId,
-      orderId,
-      createdAt: new Date()
-    });
-
-    await wallet.save();
-
-    res.json({
-      success: true,
-      message: 'Money added successfully',
-      wallet,
-      newBalance: wallet.balance
-    });
-
-  } catch (error) {
-    console.error('Wallet topup error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to add money to wallet',
-      error: error.message
-    });
-  }
-});
 
 module.exports = router;

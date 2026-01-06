@@ -3,13 +3,15 @@ const router = express.Router();
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
+
+
 // @route   GET /api/users/:id
 // @desc    Get user by ID
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -38,7 +40,7 @@ router.get('/:id', async (req, res) => {
 router.get('/email/:email', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email.toLowerCase() }).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -67,7 +69,7 @@ router.get('/email/:email', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { userType, approved } = req.query;
-    
+
     let query = {};
     if (userType) query.userType = userType;
     if (approved !== undefined) query.approved = approved === 'true';
@@ -96,10 +98,10 @@ router.get('/', async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const updates = req.body;
-    
+
     // Don't allow password updates through this route
     delete updates.password;
-    
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { ...updates, updatedAt: Date.now() },
@@ -128,5 +130,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
   }
 });
+
+
 
 module.exports = router;

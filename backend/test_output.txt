@@ -1,0 +1,80 @@
+======================================================================
+ASPIREBRIDGE BACKEND & SIGNUP TEST
+Time: 5/1/2026, 12:10:21 pm
+======================================================================
+
+[TEST 1] Backend Health Check
+----------------------------------------------------------------------
+✅ Backend is RUNNING
+   URL: http://10.45.186.251:5000/api
+   Status: OK
+   Database: Connected
+   Uptime: 15 seconds
+   Environment: production
+
+[TEST 2] Aspirant Signup
+----------------------------------------------------------------------
+Creating aspirant: test.aspirant.1767595221245@example.com
+✅ Aspirant signup SUCCESSFUL
+   User ID: 695b5cd565c659bd6c6fb518
+   Name: Test Aspirant User
+   Email: test.aspirant.1767595221245@example.com
+   User Type: aspirant
+   Exam Category: SSC
+   Approved: true
+   Approval Status: approved
+   Token Generated: YES
+   Token Length: 171 chars
+
+[TEST 3] Achiever Signup
+----------------------------------------------------------------------
+Creating achiever: test.achiever.1767595221607@example.com
+✅ Achiever signup SUCCESSFUL
+   User ID: 695b5cd565c659bd6c6fb51b
+   Name: Test Achiever User
+   Email: test.achiever.1767595221607@example.com
+   User Type: achiever
+   Exam Category: UPSC
+   Rank: 100
+   Approved: false
+   Approval Status: pending
+   Token Generated: YES
+   Token Length: 171 chars
+
+[TEST 4] Duplicate Email Validation
+----------------------------------------------------------------------
+Attempting duplicate signup with: test.aspirant.1767595221245@example.com
+✅ Duplicate email correctly REJECTED
+   Status Code: 400
+   Message: User already exists with this email
+
+[TEST 5] Missing Fields Validation
+----------------------------------------------------------------------
+Attempting signup with missing required fields...
+✅ Missing fields correctly REJECTED
+   Status Code: 400
+   Message: Please provide all required fields
+
+======================================================================
+TEST SUMMARY
+======================================================================
+✅ Backend Health: PASS
+✅ Aspirant Signup: PASS
+✅ Achiever Signup: PASS
+✅ Duplicate Email Validation: PASS
+✅ Missing Fields Validation: PASS
+
+🎉 ALL TESTS PASSED!
+======================================================================
+
+📊 KEY FINDINGS:
+   • Backend server is running and accessible
+   • MongoDB database is connected
+   • Signup API is working for both user types
+   • Aspirants are auto-approved (approved: true)
+   • Achievers require admin approval (approved: false)
+   • JWT tokens are generated successfully
+   • Input validation is working correctly
+   • Duplicate email detection is working
+
+✅ CONCLUSION: Backend and signup functionality are FULLY OPERATIONAL

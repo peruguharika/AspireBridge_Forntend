@@ -8,36 +8,28 @@ const { authenticateToken } = require('../middleware/auth');
 // @access  Private (or Public)
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        // Return array of objects for simplicity as seen in ApiService (List<Map>)
-        // Or wrap in { success: true, stories: [] }
-        // ApiService expects List<Map<String, Any>> -> Response<List<Map...>>
-        // So we should return a JSON array directly? 
-        // Wait, ApiService: suspend fun getSuccessStories(): Response<List<Map<String, Any>>>
-        // This implies the response body itself is the List.
-        // Unlike others where it's Response<SuccessResponse> which has a list inside.
-
-        // Let's return the list directly or look at other endpoints.
-        // Usually standard is { success: true, data: [] }. 
-        // But if Retrofit interface says `List<Map>`, it expects `[{}, {}]`.
-
+        console.log('📖 [GET] Fetching all success stories...');
         const stories = await SuccessStory.find().sort({ createdAt: -1 });
+        console.log(`✅ [GET] Found ${stories.length} stories.`);
         res.json(stories);
     } catch (err) {
-        console.error(err.message);
+        console.error('❌ [GET] Error:', err.message);
         res.status(500).send('Server Error');
     }
 });
 
 // @route   POST /api/successstories
 // @desc    Add a success story
-// @access  Private (Admin)
+// @access  Private (Authenticated Users)
 router.post('/', authenticateToken, async (req, res) => {
     try {
+        console.log('📝 [POST] Adding new success story:', req.body.name);
         const newStory = new SuccessStory(req.body);
         const story = await newStory.save();
+        console.log('✅ [POST] Story saved with ID:', story._id);
         res.json(story);
     } catch (err) {
-        console.error(err.message);
+        console.error('❌ [POST] Error:', err.message);
         res.status(500).send('Server Error');
     }
 });

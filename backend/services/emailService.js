@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 let transporter;
 
 try {
-  transporter = nodemailer.createTransporter({
+  transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.EMAIL_PORT) || 587,
     secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
@@ -30,7 +30,7 @@ try {
 } catch (error) {
   console.error('❌ Failed to create email transporter:', error);
   console.log('📧 Email service will run in mock mode');
-  
+
   // Create a mock transporter for development
   transporter = {
     sendMail: async (options) => {
@@ -277,7 +277,7 @@ const sendWelcomeEmail = async (email, name, userType) => {
  */
 const sendPasswordResetEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>

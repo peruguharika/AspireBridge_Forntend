@@ -1,0 +1,108 @@
+﻿
+
+[1m≡ƒÜÇ ASPIREBRIDGE BACKEND & SIGNUP TEST SUITE[0m
+[1m≡ƒòÉ 5/1/2026, 12:07:34 pm[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒÅÑ TESTING BACKEND HEALTH[0m
+
+[1m[36m============================================================[0m
+[32mΓ£à Backend is running![0m
+[36mΓä╣∩╕Å  Status: OK[0m
+[36mΓä╣∩╕Å  Database: Connected[0m
+[36mΓä╣∩╕Å  Uptime: 57s[0m
+[36mΓä╣∩╕Å  Environment: production[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒùä∩╕Å  TESTING MONGODB CONNECTION[0m
+
+[1m[36m============================================================[0m
+[36mΓä╣∩╕Å  Connecting to: mongodb+srv://peruguharika4_db_user:****@cluster0.qa4houd.mongodb.net/aspirebridge?retryWrites=true&w=majority[0m
+node : (node:23704) [MONGODB DRIVER] 
+Warning: useNewUrlParser is a deprecated 
+option: useNewUrlParser has no effect 
+since Node.js Driver version 4.0.0 and 
+will be removed in the next major version
+At line:1 char:1
++ node test_backend_signup.js 2>&1 | 
+Out-File -FilePath test_results.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecifi 
+   ed: ((node:23704) [M...t major versi  
+  on:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComm 
+   andError
+ 
+(Use `node --trace-warnings ...` to show 
+where the warning was created)
+(node:23704) [MONGODB DRIVER] Warning: 
+useUnifiedTopology is a deprecated 
+option: useUnifiedTopology has no effect 
+since Node.js Driver version 4.0.0 and 
+will be removed in the next major version
+[32mΓ£à MongoDB connected successfully![0m
+[36mΓä╣∩╕Å  Database: aspirebridge[0m
+[36mΓä╣∩╕Å  Host: ac-cygimhj-shard-00-00.qa4houd.mongodb.net[0m
+[36mΓä╣∩╕Å  Port: 27017[0m
+[36mΓä╣∩╕Å  Collections: successstories, lockedtransactions, masterclasses, settlements, withdrawalrequests, sessions, otps, examprices, jobs, resources, users, wallets, mentorposts, bookings, availabilities, feedbacks, payments, reports[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒæÑ CHECKING EXISTING USERS IN DATABASE[0m
+
+[1m[36m============================================================[0m
+[31mΓ¥î Failed to check existing users[0m
+[31mΓ¥î Error: Schema hasn't been registered for model "User".
+Use mongoose.model(name, schema)[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒæñ TESTING ASPIRANT SIGNUP[0m
+
+[1m[36m============================================================[0m
+[36mΓä╣∩╕Å  Creating aspirant: test.aspirant.1767595055551@example.com[0m
+[32mΓ£à Aspirant signup successful![0m
+[36mΓä╣∩╕Å  User ID: 695b5c2fbc3a1a66a9a78137[0m
+[36mΓä╣∩╕Å  Name: Test Aspirant[0m
+[36mΓä╣∩╕Å  Email: test.aspirant.1767595055551@example.com[0m
+[36mΓä╣∩╕Å  User Type: aspirant[0m
+[36mΓä╣∩╕Å  Approved: true[0m
+[36mΓä╣∩╕Å  Token: Generated Γ£ô[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒÅå TESTING ACHIEVER SIGNUP[0m
+
+[1m[36m============================================================[0m
+[36mΓä╣∩╕Å  Creating achiever: test.achiever.1767595055852@example.com[0m
+[32mΓ£à Achiever signup successful![0m
+[36mΓä╣∩╕Å  User ID: 695b5c2fbc3a1a66a9a7813a[0m
+[36mΓä╣∩╕Å  Name: Test Achiever[0m
+[36mΓä╣∩╕Å  Email: test.achiever.1767595055852@example.com[0m
+[36mΓä╣∩╕Å  User Type: achiever[0m
+[36mΓä╣∩╕Å  Rank: 100[0m
+[36mΓä╣∩╕Å  Approved: false[0m
+[36mΓä╣∩╕Å  Approval Status: pending[0m
+[36mΓä╣∩╕Å  Token: Generated Γ£ô[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒöü TESTING DUPLICATE EMAIL VALIDATION[0m
+
+[1m[36m============================================================[0m
+[36mΓä╣∩╕Å  Creating first user...[0m
+[32mΓ£à Duplicate email correctly rejected![0m
+[36mΓä╣∩╕Å  Message: User already exists with this email[0m
+
+[1m[36m============================================================[0m
+[1m≡ƒôè TEST SUMMARY[0m
+
+[1m[36m============================================================[0m
+[32mΓ£à Backend Health[0m
+[32mΓ£à MongoDB Connection[0m
+[31mΓ¥î Existing Users Check[0m
+[32mΓ£à Aspirant Signup[0m
+[32mΓ£à Achiever Signup[0m
+[32mΓ£à Duplicate Email Validation[0m
+
+[1m[36m============================================================[0m
+[33mΓÜá∩╕Å  SOME TESTS FAILED (5/6 passed)[0m
+
+[1m[36m============================================================[0m
+[36mΓä╣∩╕Å  MongoDB connection closed[0m

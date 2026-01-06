@@ -10,6 +10,8 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const { mentorName, content, mediaUrl, mediaType } = req.body;
 
+    console.log('📝 [POST] Creating mentor post by:', req.user.id);
+
     const post = new MentorPost({
       mentorId: req.user.id,
       mentorName,
@@ -19,6 +21,7 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     await post.save();
+    console.log('✅ [POST] Mentor post saved:', post._id);
 
     res.status(201).json({
       success: true,
@@ -41,8 +44,9 @@ router.post('/', authenticateToken, async (req, res) => {
 // @access  Public
 router.get('/', async (req, res) => {
   try {
+    console.log('📖 [GET] Fetching mentor posts...');
     const { mentorId } = req.query;
-    
+
     let query = {};
     if (mentorId) query.mentorId = mentorId;
 
@@ -50,11 +54,9 @@ router.get('/', async (req, res) => {
       .populate('mentorId', 'name email examType')
       .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      count: posts.length,
-      posts
-    });
+    console.log(`✅ [GET] Found ${posts.length} mentor posts.`);
+    // Return array directly to match Android ApiService expectation
+    res.json(posts);
 
   } catch (error) {
     console.error('Get Posts Error:', error);
