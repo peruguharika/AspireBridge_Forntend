@@ -105,7 +105,8 @@ const WalletSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-WalletSchema.index({ userId: 1 });
+// Index for faster queries
+// WalletSchema.index({ userId: 1 }); // Removed to avoid Duplicate Schema Index error (already unique: true)
 WalletSchema.index({ userType: 1 });
 
 module.exports = mongoose.model('Wallet', WalletSchema);

@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const IP = '10.45.186.251';
+const IP = '192.168.137.168';
 const PORT = 5000;
 const URL = `http://${IP}:${PORT}/api/auth/test`; // Try a simple endpoint, or just root
 

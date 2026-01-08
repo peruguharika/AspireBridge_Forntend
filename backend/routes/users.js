@@ -92,6 +92,48 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   PUT /api/users/profile
+// @desc    Update current user profile
+// @access  Private
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const updates = req.body;
+
+    // Don't allow password updates through this route
+    delete updates.password;
+    delete updates.role; // Don't allow role change either
+    delete updates.email; // Usually don't allow email change without verification
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { ...updates, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user
+    });
+
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // @route   PUT /api/users/:id
 // @desc    Update user
 // @access  Private

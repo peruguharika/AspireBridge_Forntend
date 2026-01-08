@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const LOGIN_URL = 'http://10.45.186.251:5000/api/auth/login';
+const LOGIN_URL = 'http://192.168.137.168:5000/api/auth/login';
 
 async function testLogin() {
     console.log(`Testing Login at ${LOGIN_URL}...`);

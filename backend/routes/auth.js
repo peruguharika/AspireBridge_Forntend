@@ -264,7 +264,14 @@ router.post('/admin-login', async (req, res) => {
       res.json({
         success: true,
         message: 'Admin login successful',
-        token
+        token,
+        user: {
+          id: 'admin-id',
+          name: 'Administrator',
+          email: email,
+          userType: 'admin',
+          role: 'admin'
+        }
       });
     } else {
       res.status(401).json({

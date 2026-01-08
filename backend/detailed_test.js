@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 
-const BASE_URL = 'http://10.45.186.251:5000/api';
+const BASE_URL = 'http://192.168.137.168:5000/api';
 const OUTPUT_FILE = 'test_output.txt';
 
 let output = [];

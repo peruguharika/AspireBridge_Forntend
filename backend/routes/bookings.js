@@ -72,6 +72,27 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
+    // Update Availability Slot (Mark as Booked)
+    const Availability = require('../models/Availability');
+    const availability = await Availability.findOne({ userId: achieverId });
+    if (availability) {
+      const slotIndex = availability.specificSlots.findIndex(slot => {
+        const slotDateStr = slot.date.toISOString().split('T')[0];
+        // Handle potential date format differences (e.g. if req.body.date is ISO or YYYY-MM-DD)
+        const bookingDateStr = date.split('T')[0];
+        return slotDateStr === bookingDateStr && slot.startTime === time;
+      });
+
+      if (slotIndex !== -1) {
+        availability.specificSlots[slotIndex].isBooked = true;
+        availability.specificSlots[slotIndex].bookingId = booking._id;
+        await availability.save();
+        console.log(`✅ Slot marked booked for ${achieverId} at ${date} ${time}`);
+      } else {
+        console.log(`⚠️ Slot not found for booking update: ${achieverId} ${date} ${time}`);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
